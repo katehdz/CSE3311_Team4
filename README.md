@@ -2,8 +2,8 @@
 
 Github repository for Team 4
 
-Members:
-Mohammad Rahman
-Ariston Stitt
-Joshua Thomas
-Kaitlynn Hernandez 
+Members:  
+Mohammad Rahmam  
+Ariston Stitt  
+Joshua Thomas  
+Kaitlynn Hernandez
