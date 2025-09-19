@@ -8,7 +8,7 @@ Ariston Stitt
 Joshua Thomas  
 Kaitlynn Hernandez  
 
-Project Overview
+Project Overview  
 Our project is a simple database-driven system that helps students manage and track campus club memberships. The system allows users to add students and clubs, join students to clubs, and view membership lists.  
 
 Problem: Current available platforms/methods for tracking club memberships are inefficient or too overwhelming/complicated. Students and club officers often rely on manual, disparate systems like paper sign-up sheets, spreadsheets, or informal group chats. This leads to inaccurate data, wasted time, and difficulty in communicating with all members. The platforms that do exist have overcomplicated features, making students stray away from wanting to use it to learn more about campus organizations.   
