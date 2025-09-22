@@ -3,7 +3,7 @@
 Github repository for  CSE 3311-002 Team 4
 
 Members:  
-Mohammad Hasibur Rahman
+Mohammad Hasibur Rahman  
 Ariston Stitt  
 Joshua Thomas  
 Kaitlynn Hernandez  
