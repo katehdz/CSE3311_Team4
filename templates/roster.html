@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Club Roster</h2>
+<form class="inline" method="get">
+<label>Club
+<select name="club_id">
+<option value="">-- Select --</option>
+{% for cid, c in clubs.items() %}
+<option value="{{ cid }}" {% if selected_club == cid %}selected{% endif %}>{{ c.name }}</option>
+{% endfor %}
+</select>
+</label>
+<label>Role
+<select name="role">
+<option value="" {% if not selected_role %}selected{% endif %}>All</option>
+<option value="member" {% if selected_role == 'member' %}selected{% endif %}>Member</option>
+<option value="officer" {% if selected_role == 'officer' %}selected{% endif %}>Officer</option>
+</select>
+</label>
+<label>Sort
+<select name="sort">
+<option value="name" {% if sort == 'name' %}selected{% endif %}>Name</option>
+<option value="role" {% if sort == 'role' %}selected{% endif %}>Role</option>
+</select>
+</label>
+<button type="submit">View</button>
+</form>
+
+
+<table>
+<thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th></tr></thead>
+<tbody>
+{% for m in members %}
+<tr>
+<td>{{ m.student.name }}</td>
+<td>{{ m.student.email }}</td>
+<td>{{ m.role }}</td>
+<td>{{ m.join_date | int }}</td>
+</tr>
+{% else %}
+<tr><td colspan="4">No members to show.</td></tr>
+{% endfor %}
+</tbody>
+</table>
+
+
+{% endblock %}

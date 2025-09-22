@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Clubs</h2>
+<form class="inline" method="post" action="{{ url_for('create_club') }}">
+<input name="name" placeholder="Club name" required>
+<input name="description" placeholder="Description">
+<button type="submit">Create</button>
+</form>
+
+
+<table>
+<thead><tr><th>Name</th><th>Description</th></tr></thead>
+<tbody>
+{% for cid, c in clubs.items() %}
+<tr>
+<td>{{ c.name }}</td>
+<td>{{ c.description }}</td>
+</tr>
+{% else %}
+<tr><td colspan="2">No clubs yet.</td></tr>
+{% endfor %}
+</tbody>
+</table>
+{% endblock %}

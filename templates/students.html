@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Students</h2>
+<form class="inline" method="post" action="{{ url_for('create_student') }}">
+<input name="name" placeholder="Full name" required>
+<input name="email" placeholder="NetID or email" type="email" required>
+<button type="submit">Add</button>
+</form>
+
+
+<table>
+<thead><tr><th>Name</th><th>Email</th></tr></thead>
+<tbody>
+{% for sid, s in students.items() %}
+<tr>
+<td>{{ s.name }}</td>
+<td>{{ s.email }}</td>
+</tr>
+{% else %}
+<tr><td colspan="2">No students yet.</td></tr>
+{% endfor %}
+</tbody>
+</table>
+{% endblock %}
