@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block title %}Students{% endblock %}
+
+{% block content %}
+<div class="students-container">
+    <!-- Header -->
+    <div class="header-section d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-2">
+                    <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Club House</a></li>
+                    <li class="breadcrumb-item active">Students</li>
+                </ol>
+            </nav>
+            <h1 class="page-title">Students</h1>
+            <p class="text-muted">Manage all registered students</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createStudentModal">
+                <i class="bi bi-person-plus"></i> Add Student
+            </button>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Clubs
+            </a>
+        </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="search-section mb-4">
+        <div class="search-container">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0">
+                    <i class="bi bi-search text-muted"></i>
+                </span>
+                <input type="text" class="form-control border-start-0 ps-0" id="studentSearchInput" 
+                       placeholder="Search students...">
+            </div>
+        </div>
+    </div>
+
+    <!-- Students Grid -->
+    <div class="students-grid" id="studentsContainer">
+        {% if students %}
+            {% for student in students %}
+            <div class="student-card" data-student-name="{{ student.name.lower() }}" data-student-email="{{ student.email.lower() }}">
+                <div class="student-avatar">
+                    <i class="bi bi-person-circle"></i>
+                </div>
+                <div class="student-info">
+                    <h4 class="student-name">{{ student.name }}</h4>
+                    <p class="student-email">{{ student.email }}</p>
+                    <div class="student-meta">
+                        <span class="join-date">
+                            <i class="bi bi-calendar3"></i>
+                            Registered {{ student.created_at[:10] }}
+                        </span>
+                    </div>
+                </div>
+                <div class="student-actions dropdown">
+                    <button class="btn btn-link p-0 text-muted" type="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-three-dots-vertical"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item edit-student-btn" href="#" data-student-id="{{ student.id }}">
+                            <i class="bi bi-pencil"></i> Edit
+                        </a></li>
+                        <li><a class="dropdown-item text-danger delete-student-btn" href="#" 
+                               data-student-id="{{ student.id }}" data-student-name="{{ student.name }}">
+                            <i class="bi bi-trash"></i> Delete
+                        </a></li>
+                    </ul>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+        <div class="no-students-message text-center py-5">
+            <i class="bi bi-people text-muted" style="font-size: 3rem;"></i>
+            <h3 class="text-muted mt-3">No students registered</h3>
+            <p class="text-muted">Start by adding the first student to the system!</p>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createStudentModal">
+                <i class="bi bi-person-plus"></i> Add First Student
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Create Student Modal -->
+<div class="modal fade" id="createStudentModal" tabindex="-1" aria-labelledby="createStudentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createStudentModalLabel">Add New Student</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="createStudentForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="studentName" class="form-label">Student Name</label>
+                        <input type="text" class="form-control" id="studentName" name="name" required 
+                               placeholder="Enter student name">
+                    </div>
+                    <div class="mb-3">
+                        <label for="studentEmail" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="studentEmail" name="email" required
+                               placeholder="Enter student email">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Student</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay" style="display: none;">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const studentSearchInput = document.getElementById('studentSearchInput');
+    const createStudentForm = document.getElementById('createStudentForm');
+    const createStudentModal = new bootstrap.Modal(document.getElementById('createStudentModal'));
+    const loadingOverlay = document.getElementById('loadingOverlay');
+
+    // Search functionality
+    studentSearchInput.addEventListener('input', function() {
+        const query = this.value.toLowerCase().trim();
+        const studentCards = document.querySelectorAll('.student-card');
+        
+        studentCards.forEach(card => {
+            const name = card.dataset.studentName;
+            const email = card.dataset.studentEmail;
+            const isVisible = name.includes(query) || email.includes(query);
+            card.style.display = isVisible ? 'flex' : 'none';
+        });
+    });
+
+    // Create student form submission
+    createStudentForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const data = {
+            name: formData.get('name'),
+            email: formData.get('email')
+        };
+
+        showLoading();
+        
+        fetch('/api/students', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+            hideLoading();
+            if (result.success) {
+                createStudentModal.hide();
+                showAlert('Student added successfully!', 'success');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                showAlert(result.error || 'Failed to add student', 'error');
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error:', error);
+            showAlert('An error occurred while adding the student', 'error');
+        });
+    });
+
+    // Reset form when modal is hidden
+    document.getElementById('createStudentModal').addEventListener('hidden.bs.modal', function() {
+        createStudentForm.reset();
+    });
+
+    // Utility functions
+    function showLoading() {
+        loadingOverlay.style.display = 'flex';
+    }
+
+    function hideLoading() {
+        loadingOverlay.style.display = 'none';
+    }
+
+    function showAlert(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type === 'error' ? 'danger' : 'success'} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        const container = document.querySelector('.students-container');
+        container.insertBefore(alertDiv, container.firstChild);
+        
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    }
+});
+</script>
+{% endblock %}

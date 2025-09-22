@@ -1,0 +1,402 @@
+{% extends "base.html" %}
+
+{% block title %}{{ club.name }} - Roster{% endblock %}
+
+{% block content %}
+<div class="roster-container">
+    <!-- Header -->
+    <div class="header-section d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-2">
+                    <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Club House</a></li>
+                    <li class="breadcrumb-item active">{{ club.name }}</li>
+                </ol>
+            </nav>
+            <h1 class="page-title">{{ club.name }} Roster</h1>
+            <p class="text-muted">{{ club.description }}</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addMemberModal">
+                <i class="bi bi-person-plus"></i> Add Member
+            </button>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Clubs
+            </a>
+        </div>
+    </div>
+
+    <!-- Member Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="bi bi-people"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>{{ members|length }}</h3>
+                    <p>Total Members</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="bi bi-star"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>{{ members|selectattr('role', 'equalto', 'President')|list|length + members|selectattr('role', 'equalto', 'Officer')|list|length }}</h3>
+                    <p>Officers</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="bi bi-person-check"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>{{ members|selectattr('role', 'equalto', 'Member')|list|length }}</h3>
+                    <p>Regular Members</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="bi bi-calendar-plus"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>{{ ((members|map(attribute='join_date')|list|sort|reverse|first)[:10]) if members else 'N/A' }}</h3>
+                    <p>Latest Join</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Members List -->
+    <div class="members-section">
+        <div class="section-header d-flex justify-content-between align-items-center mb-3">
+            <h3>Members</h3>
+            <div class="search-container">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0">
+                        <i class="bi bi-search text-muted"></i>
+                    </span>
+                    <input type="text" class="form-control border-start-0 ps-0" id="memberSearchInput" 
+                           placeholder="Search members...">
+                </div>
+            </div>
+        </div>
+
+        {% if members %}
+        <div class="members-grid" id="membersContainer">
+            {% for member in members %}
+            <div class="member-card" data-member-name="{{ member.name.lower() }}" data-member-role="{{ member.role.lower() }}">
+                <div class="member-avatar">
+                    <i class="bi bi-person-circle"></i>
+                </div>
+                <div class="member-info">
+                    <h4 class="member-name">{{ member.name }}</h4>
+                    <p class="member-email">{{ member.email }}</p>
+                    <div class="member-details">
+                        <span class="role-badge role-{{ member.role.lower().replace(' ', '-') }}">
+                            {{ member.role }}
+                        </span>
+                        <span class="join-date">
+                            <i class="bi bi-calendar3"></i>
+                            Joined {{ member.join_date[:10] }}
+                        </span>
+                    </div>
+                </div>
+                <div class="member-actions dropdown">
+                    <button class="btn btn-link p-0 text-muted" type="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-three-dots-vertical"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item edit-role-btn" href="#" 
+                               data-member-id="{{ member.id }}" data-current-role="{{ member.role }}">
+                            <i class="bi bi-pencil"></i> Change Role
+                        </a></li>
+                        <li><a class="dropdown-item text-danger remove-member-btn" href="#" 
+                               data-member-id="{{ member.id }}" data-member-name="{{ member.name }}">
+                            <i class="bi bi-person-dash"></i> Remove Member
+                        </a></li>
+                    </ul>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="no-members-message text-center py-5">
+            <i class="bi bi-people text-muted" style="font-size: 3rem;"></i>
+            <h3 class="text-muted mt-3">No members yet</h3>
+            <p class="text-muted">Start building your club by adding the first member!</p>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addMemberModal">
+                <i class="bi bi-person-plus"></i> Add First Member
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add Member Modal -->
+<div class="modal fade" id="addMemberModal" tabindex="-1" aria-labelledby="addMemberModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addMemberModalLabel">Add Member to {{ club.name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="addMemberForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="studentSelect" class="form-label">Select Student</label>
+                        <select class="form-select" id="studentSelect" name="student_id" required>
+                            <option value="">Choose a student...</option>
+                            {% for student in students %}
+                            <option value="{{ student.id }}">{{ student.name }} ({{ student.email }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="memberRole" class="form-label">Role</label>
+                        <select class="form-select" id="memberRole" name="role" required>
+                            <option value="Member">Member</option>
+                            <option value="Officer">Officer</option>
+                            <option value="Vice President">Vice President</option>
+                            <option value="Treasurer">Treasurer</option>
+                            <option value="Secretary">Secretary</option>
+                            <option value="President">President</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Member</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Role Modal -->
+<div class="modal fade" id="editRoleModal" tabindex="-1" aria-labelledby="editRoleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editRoleModalLabel">Change Member Role</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editRoleForm">
+                <div class="modal-body">
+                    <input type="hidden" id="editMemberId" name="member_id">
+                    <div class="mb-3">
+                        <label for="editMemberRole" class="form-label">New Role</label>
+                        <select class="form-select" id="editMemberRole" name="role" required>
+                            <option value="Member">Member</option>
+                            <option value="Officer">Officer</option>
+                            <option value="Vice President">Vice President</option>
+                            <option value="Treasurer">Treasurer</option>
+                            <option value="Secretary">Secretary</option>
+                            <option value="President">President</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Role</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Remove Member Modal -->
+<div class="modal fade" id="removeMemberModal" tabindex="-1" aria-labelledby="removeMemberModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="removeMemberModalLabel">Remove Member</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to remove <strong id="removeMemberName"></strong> from this club?</p>
+                <p class="text-muted">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmRemoveBtn">Remove Member</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay" style="display: none;">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const clubId = '{{ club.id }}';
+    const memberSearchInput = document.getElementById('memberSearchInput');
+    const addMemberForm = document.getElementById('addMemberForm');
+    const editRoleForm = document.getElementById('editRoleForm');
+    const addMemberModal = new bootstrap.Modal(document.getElementById('addMemberModal'));
+    const editRoleModal = new bootstrap.Modal(document.getElementById('editRoleModal'));
+    const removeMemberModal = new bootstrap.Modal(document.getElementById('removeMemberModal'));
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    
+    let currentRemoveMemberId = null;
+
+    // Search functionality
+    memberSearchInput.addEventListener('input', function() {
+        const query = this.value.toLowerCase().trim();
+        const memberCards = document.querySelectorAll('.member-card');
+        
+        memberCards.forEach(card => {
+            const name = card.dataset.memberName;
+            const role = card.dataset.memberRole;
+            const isVisible = name.includes(query) || role.includes(query);
+            card.style.display = isVisible ? 'flex' : 'none';
+        });
+    });
+
+    // Add member form submission
+    addMemberForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const data = {
+            student_id: formData.get('student_id'),
+            role: formData.get('role')
+        };
+
+        showLoading();
+        
+        fetch(`/api/clubs/${clubId}/members`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+            hideLoading();
+            if (result.success) {
+                addMemberModal.hide();
+                showAlert('Member added successfully!', 'success');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                showAlert(result.error || 'Failed to add member', 'error');
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error:', error);
+            showAlert('An error occurred while adding the member', 'error');
+        });
+    });
+
+    // Edit role and remove member buttons
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.edit-role-btn')) {
+            e.preventDefault();
+            const btn = e.target.closest('.edit-role-btn');
+            const memberId = btn.dataset.memberId;
+            const currentRole = btn.dataset.currentRole;
+            
+            document.getElementById('editMemberId').value = memberId;
+            document.getElementById('editMemberRole').value = currentRole;
+            editRoleModal.show();
+        }
+        
+        if (e.target.closest('.remove-member-btn')) {
+            e.preventDefault();
+            const btn = e.target.closest('.remove-member-btn');
+            currentRemoveMemberId = btn.dataset.memberId;
+            document.getElementById('removeMemberName').textContent = btn.dataset.memberName;
+            removeMemberModal.show();
+        }
+    });
+
+    // Edit role form submission
+    editRoleForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        // Note: Role editing would require additional API endpoint
+        showAlert('Role editing feature coming soon!', 'info');
+        editRoleModal.hide();
+    });
+
+    // Remove member confirmation
+    document.getElementById('confirmRemoveBtn').addEventListener('click', function() {
+        if (!currentRemoveMemberId) return;
+
+        showLoading();
+        
+        fetch(`/api/clubs/${clubId}/members/${currentRemoveMemberId}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(result => {
+            hideLoading();
+            if (result.success) {
+                removeMemberModal.hide();
+                showAlert('Member removed successfully!', 'success');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                showAlert(result.error || 'Failed to remove member', 'error');
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error:', error);
+            showAlert('An error occurred while removing the member', 'error');
+        });
+    });
+
+    // Reset forms when modals are hidden
+    document.getElementById('addMemberModal').addEventListener('hidden.bs.modal', function() {
+        addMemberForm.reset();
+    });
+
+    // Utility functions
+    function showLoading() {
+        loadingOverlay.style.display = 'flex';
+    }
+
+    function hideLoading() {
+        loadingOverlay.style.display = 'none';
+    }
+
+    function showAlert(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type === 'error' ? 'danger' : type === 'info' ? 'info' : 'success'} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        const container = document.querySelector('.roster-container');
+        container.insertBefore(alertDiv, container.firstChild);
+        
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    }
+});
+</script>
+{% endblock %}
