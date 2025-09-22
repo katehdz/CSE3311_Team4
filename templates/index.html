@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="grid">
+<div class="card">
+<h2>Add Student</h2>
+<form method="post" action="{{ url_for('create_student') }}">
+<label>Name <input name="name" required></label>
+<label>Email <input name="email" type="email" required></label>
+<button type="submit">Add Student</button>
+</form>
+</div>
+
+
+<div class="card">
+<h2>Create Club</h2>
+<form method="post" action="{{ url_for('create_club') }}">
+<label>Name <input name="name" required></label>
+<label>Description <textarea name="description"></textarea></label>
+<button type="submit">Create Club</button>
+</form>
+</div>
+
+
+<div class="card">
+<h2>Join Student to Club</h2>
+<form method="post" action="{{ url_for('create_membership') }}">
+<label>Student
+<select name="student_id" required>
+<option value="">-- Select --</option>
+{% for sid, s in students.items() %}
+<option value="{{ sid }}">{{ s.name }} ({{ s.email }})</option>
+{% endfor %}
+</select>
+</label>
+<label>Club
+<select name="club_id" required>
+<option value="">-- Select --</option>
+{% for cid, c in clubs.items() %}
+<option value="{{ cid }}">{{ c.name }}</option>
+{% endfor %}
+</select>
+</label>
+<label>Role
+<select name="role">
+<option value="member">Member</option>
+<option value="officer">Officer</option>
+</select>
+</label>
+<button type="submit">Join</button>
+</form>
+</div>
+</section>
+{% endblock %}
