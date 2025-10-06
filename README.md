@@ -20,12 +20,14 @@ Compile & Run
 Club House System Setup
 Environment Configuration
 1.	Create a .env file in the project root with the following variables:
-Firebase Configuration
-Option 1: Use service account file path
-FIREBASE_SERVICE_ACCOUNT_PATH=path/to/your/serviceAccountKey.json
+
+Firebase Configuration  
+Option 1: Use service account file path  
+FIREBASE_SERVICE_ACCOUNT_PATH=path/to/your/serviceAccountKey.json  
 Option 2: Use service account key as JSON string (recommended for production)
-# FIREBASE_SERVICE_ACCOUNT_KEY={"type":"service_account","project_id":"your-project-id",...}
-Flask Configuration
+#
+FIREBASE_SERVICE_ACCOUNT_KEY={"type":"service_account","project_id":"your-project-id",...}  
+Flask Configuration  
 FLASK_SECRET_KEY=your-super-secret-key-here-change-this-in-production
 
 Firebase Setup
