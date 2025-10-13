@@ -1,221 +1,565 @@
 {% extends "base.html" %}
-
 {% block title %}Students{% endblock %}
 
 {% block content %}
 <div class="students-container">
-    <!-- Header -->
-    <div class="header-section d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb mb-2">
-                    <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Club House</a></li>
-                    <li class="breadcrumb-item active">Students</li>
-                </ol>
-            </nav>
-            <h1 class="page-title">Students</h1>
-            <p class="text-muted">Manage all registered students</p>
-        </div>
-        <div class="d-flex gap-2">
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createStudentModal">
-                <i class="bi bi-person-plus"></i> Add Student
-            </button>
-            <a href="{{ url_for('index') }}" class="btn btn-secondary">
-                <i class="bi bi-arrow-left"></i> Back to Clubs
-            </a>
-        </div>
+  <!-- Header -->
+  <div class="header-section d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-2">
+          <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Club House</a></li>
+          <li class="breadcrumb-item active">Students</li>
+        </ol>
+      </nav>
+      <h1 class="page-title">Students</h1>
+      <p class="text-muted">Manage all registered students</p>
     </div>
-
-    <!-- Search Bar -->
-    <div class="search-section mb-4">
-        <div class="search-container">
-            <div class="input-group">
-                <span class="input-group-text bg-white border-end-0">
-                    <i class="bi bi-search text-muted"></i>
-                </span>
-                <input type="text" class="form-control border-start-0 ps-0" id="studentSearchInput" 
-                       placeholder="Search students...">
-            </div>
-        </div>
+    <div class="d-flex gap-2">
+      <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createStudentModal">
+        <i class="bi bi-person-plus"></i> Add Student
+      </button>
+      <a href="{{ url_for('index') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Clubs
+      </a>
     </div>
+  </div>
 
-    <!-- Students Grid -->
-    <div class="students-grid" id="studentsContainer">
-        {% if students %}
-            {% for student in students %}
-            <div class="student-card" data-student-name="{{ student.name.lower() }}" data-student-email="{{ student.email.lower() }}">
-                <div class="student-avatar">
-                    <i class="bi bi-person-circle"></i>
-                </div>
-                <div class="student-info">
-                    <h4 class="student-name">{{ student.name }}</h4>
-                    <p class="student-email">{{ student.email }}</p>
-                    <div class="student-meta">
-                        <span class="join-date">
-                            <i class="bi bi-calendar3"></i>
-                            Registered {{ student.created_at[:10] }}
-                        </span>
-                    </div>
-                </div>
-                <div class="student-actions dropdown">
-                    <button class="btn btn-link p-0 text-muted" type="button" data-bs-toggle="dropdown">
-                        <i class="bi bi-three-dots-vertical"></i>
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item edit-student-btn" href="#" data-student-id="{{ student.id }}">
-                            <i class="bi bi-pencil"></i> Edit
-                        </a></li>
-                        <li><a class="dropdown-item text-danger delete-student-btn" href="#" 
-                               data-student-id="{{ student.id }}" data-student-name="{{ student.name }}">
-                            <i class="bi bi-trash"></i> Delete
-                        </a></li>
-                    </ul>
-                </div>
-            </div>
+  <!-- Search + Filters (unchanged) -->
+  <div class="row mb-3 g-3">
+    <div class="col-md-5">
+      <div class="input-group">
+        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+        <input id="studentSearchInput" type="text" class="form-control border-start-0 ps-0" placeholder="Search students by name/email...">
+      </div>
+    </div>
+    <div class="col-md-7">
+      <div class="border rounded p-2">
+        <div class="d-flex align-items-center flex-wrap gap-2">
+          <div><strong>Filter by:</strong></div>
+          <div class="d-flex align-items-center">
+            <label class="me-2 mb-0">Role</label>
+            <select id="roleFilterStudents" class="form-select form-select-sm w-auto">
+              <option value="">Any</option>
+              <option value="President">President</option>
+              <option value="Vice President">Vice President</option>
+              <option value="Officer">Officer</option>
+              <option value="Treasurer">Treasurer</option>
+              <option value="Secretary">Secretary</option>
+              <option value="Member">Member</option>
+            </select>
+          </div>
+          <div class="vr mx-2"></div>
+          <div class="d-flex align-items-center flex-wrap gap-2">
+            <span class="mb-0">Clubs:</span>
+            {% for c in clubs %}
+              <div class="form-check form-check-inline">
+                <input class="form-check-input club-filter" type="checkbox" id="club_{{ c.id }}" value="{{ c.id }}">
+                <label class="form-check-label" for="club_{{ c.id }}">{{ c.name }}</label>
+              </div>
             {% endfor %}
-        {% else %}
-        <div class="no-students-message text-center py-5">
-            <i class="bi bi-people text-muted" style="font-size: 3rem;"></i>
-            <h3 class="text-muted mt-3">No students registered</h3>
-            <p class="text-muted">Start by adding the first student to the system!</p>
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createStudentModal">
-                <i class="bi bi-person-plus"></i> Add First Student
-            </button>
+          </div>
+          <div class="ms-auto">
+            <button id="applyFiltersBtn" class="btn btn-sm btn-outline-primary">Apply</button>
+            <button id="clearFiltersBtn" class="btn btn-sm btn-outline-secondary">Clear</button>
+          </div>
         </div>
-        {% endif %}
+      </div>
     </div>
+  </div>
+
+  <!-- Students Grid -->
+  <div id="studentsContainer" class="students-grid">
+    {% if students %}
+      {% for student in students %}
+      <div class="student-card"
+           data-student-id="{{ student.id }}"
+           data-student-name="{{ (student.name or '')|lower }}"
+           data-student-email="{{ (student.email or '')|lower }}">
+        <div class="student-avatar"><i class="bi bi-person-circle"></i></div>
+        <div class="student-info">
+          <h4 class="student-name">{{ student.name or '—' }}</h4>
+          <p class="student-email">
+            <a href="mailto:{{ (student.email or '') }}">{{ student.email or '—' }}</a>
+            <button class="btn btn-sm btn-outline-secondary copy-email-btn ms-2" data-email="{{ (student.email or '') }}" type="button" title="Copy email">
+              <i class="bi bi-clipboard"></i>
+            </button>
+          </p>
+          <div class="student-memberships small text-muted"></div>
+          <div class="student-meta mt-1">
+            <span class="join-date"><i class="bi bi-calendar3"></i> Registered {{ (student.created_at or '')[:10] }}</span>
+          </div>
+        </div>
+        <div class="student-actions dropdown">
+          <button class="btn btn-link p-0 text-muted" type="button" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item edit-student-btn" href="#" data-student-id="{{ student.id }}"><i class="bi bi-pencil"></i> Edit</a></li>
+            <li><a class="dropdown-item text-danger delete-student-btn" href="#" data-student-id="{{ student.id }}" data-student-name="{{ student.name }}"><i class="bi bi-trash"></i> Delete</a></li>
+          </ul>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="no-students-message text-center py-5">
+        <i class="bi bi-people text-muted" style="font-size: 3rem;"></i>
+        <h3 class="text-muted mt-3">No students registered</h3>
+        <p class="text-muted">Start by adding the first student to the system!</p>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createStudentModal">
+          <i class="bi bi-person-plus"></i> Add First Student
+        </button>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- client-managed empty state (hidden by default) -->
+  <div id="studentsEmptyState" class="no-students-message text-center py-5 w-100" style="display:none;">
+    <i class="bi bi-people text-muted" style="font-size: 3rem;"></i>
+    <h3 class="text-muted mt-3">No students match the current filters</h3>
+    <p class="text-muted">Try clearing filters or add the first student.</p>
+    <div class="d-flex justify-content-center gap-2 mt-3">
+      <button id="clearStudentsFilterBtn" class="btn btn-outline-secondary btn-sm">Clear Filter</button>
+      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createStudentModal">
+        <i class="bi bi-person-plus"></i> Add Student
+      </button>
+    </div>
+  </div>
 </div>
 
-<!-- Create Student Modal -->
+<!-- Create Student Modal (now includes Club + Role) -->
 <div class="modal fade" id="createStudentModal" tabindex="-1" aria-labelledby="createStudentModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="createStudentModalLabel">Add New Student</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="createStudentModalLabel">Add New Student</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <form id="createStudentForm" novalidate>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="studentName" class="form-label">Student Name</label>
+            <input type="text" class="form-control" id="studentName" name="name" required placeholder="Enter student name">
+            <div class="invalid-feedback">Enter a valid name (2–80 characters).</div>
+          </div>
+
+          <div class="mb-3">
+            <label for="studentEmail" class="form-label">Email</label>
+            <input type="email" class="form-control" id="studentEmail" name="email" required placeholder="Enter student email">
+            <div class="invalid-feedback" id="createEmailFeedback">Enter a valid email address.</div>
+          </div>
+
+          <!-- New Club + Role fields -->
+          <div class="border-top pt-3 mt-3">
+            <div class="alert alert-info mb-3">
+              <small>Club and role selection are optional, but if you select one, you must select both.</small>
             </div>
-            <form id="createStudentForm">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="studentName" class="form-label">Student Name</label>
-                        <input type="text" class="form-control" id="studentName" name="name" required 
-                               placeholder="Enter student name">
-                    </div>
-                    <div class="mb-3">
-                        <label for="studentEmail" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="studentEmail" name="email" required
-                               placeholder="Enter student email">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Add Student</button>
-                </div>
-            </form>
+            <div class="mb-3">
+              <label for="studentClubSelect" class="form-label">Club</label>
+              <select id="studentClubSelect" name="club_id" class="form-select">
+                <option value="">Select club...</option>
+                {% for c in clubs %}
+                <option value="{{ c.id }}">{{ c.name }}</option>
+                {% endfor %}
+              </select>
+              <div class="invalid-feedback">Please select a club or leave both club and role empty.</div>
+            </div>
+
+            <div class="mb-3">
+              <label for="studentRoleSelect" class="form-label">Role</label>
+              <select id="studentRoleSelect" name="role" class="form-select">
+                <option value="">Select role...</option>
+                <option value="President">President</option>
+                <option value="Vice President">Vice President</option>
+                <option value="Officer">Officer</option>
+                <option value="Treasurer">Treasurer</option>
+                <option value="Secretary">Secretary</option>
+                <option value="Member">Member</option>
+              </select>
+              <div class="invalid-feedback" id="studentRoleFeedback">Please select a role or leave both club and role empty.</div>
+            </div>
+          </div>
         </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" id="createStudentSubmit" class="btn btn-primary" disabled>Add Student</button>
+        </div>
+      </form>
     </div>
+  </div>
+</div>
+
+<!-- Edit / Delete modals (unchanged) -->
+<div class="modal fade" id="editStudentModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+    <form id="editStudentForm" novalidate>
+      <div class="modal-header"><h5 class="modal-title">Edit Student</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <input type="hidden" id="editStudentId" name="student_id">
+        <div class="mb-3"><label class="form-label">Student Name</label><input id="editStudentName" name="name" class="form-control" required><div class="invalid-feedback">Enter a valid name (2–80 characters).</div></div>
+        <div class="mb-3"><label class="form-label">Email</label><input id="editStudentEmail" name="email" class="form-control" required><div class="invalid-feedback" id="editEmailFeedback">Enter a valid email address.</div></div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button id="editStudentSubmit" class="btn btn-primary" type="submit" disabled>Update Student</button></div>
+    </form>
+  </div></div>
+</div>
+
+<div class="modal fade" id="deleteStudentModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">Delete Student</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body"><p>Are you sure you want to delete <strong id="deleteStudentName"></strong>?</p><p class="text-muted">This will remove the student from all clubs too.</p></div>
+    <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button id="confirmDeleteStudentBtn" class="btn btn-danger" type="button">Delete</button></div>
+  </div></div>
 </div>
 
 <!-- Loading Overlay -->
-<div class="loading-overlay" id="loadingOverlay" style="display: none;">
-    <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Loading...</span>
-    </div>
+<div id="loadingOverlay" class="loading-overlay" style="display:none;">
+  <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
 </div>
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const studentSearchInput = document.getElementById('studentSearchInput');
-    const createStudentForm = document.getElementById('createStudentForm');
-    const createStudentModal = new bootstrap.Modal(document.getElementById('createStudentModal'));
-    const loadingOverlay = document.getElementById('loadingOverlay');
+document.addEventListener('DOMContentLoaded', function(){
+  const studentsContainer = document.getElementById('studentsContainer');
+  const studentsEmptyState = document.getElementById('studentsEmptyState');
 
-    // Search functionality
-    studentSearchInput.addEventListener('input', function() {
-        const query = this.value.toLowerCase().trim();
-        const studentCards = document.querySelectorAll('.student-card');
-        
-        studentCards.forEach(card => {
-            const name = card.dataset.studentName;
-            const email = card.dataset.studentEmail;
-            const isVisible = name.includes(query) || email.includes(query);
-            card.style.display = isVisible ? 'flex' : 'none';
+  // Create modal fields
+  const nameInput = document.getElementById('studentName');
+  const emailInput = document.getElementById('studentEmail');
+  const createEmailFeedback = document.getElementById('createEmailFeedback');
+  const createSubmit = document.getElementById('createStudentSubmit');
+
+  // New fields
+  const clubSelect = document.getElementById('studentClubSelect');
+  const roleSelect = document.getElementById('studentRoleSelect');
+  const roleFeedback = document.getElementById('studentRoleFeedback');
+
+  const editId = document.getElementById('editStudentId');
+  const editName = document.getElementById('editStudentName');
+  const editEmail = document.getElementById('editStudentEmail');
+  const editEmailFeedback = document.getElementById('editEmailFeedback');
+  const editSubmit = document.getElementById('editStudentSubmit');
+
+  const deleteModal = new bootstrap.Modal(document.getElementById('deleteStudentModal'));
+  const confirmDeleteBtn = document.getElementById('confirmDeleteStudentBtn');
+
+  const searchInput = document.getElementById('studentSearchInput');
+  const roleFilter = document.getElementById('roleFilterStudents');
+  const applyFiltersBtn = document.getElementById('applyFiltersBtn');
+  const clearFiltersBtn = document.getElementById('clearFiltersBtn');
+
+  function showLoading(){ document.getElementById('loadingOverlay').style.display='flex'; }
+  function hideLoading(){ document.getElementById('loadingOverlay').style.display='none'; }
+  function showAlert(msg, type='success'){ const d=document.createElement('div'); d.className=`alert alert-${type==='error'?'danger':type} alert-dismissible fade show`; d.innerHTML=`${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`; document.querySelector('.students-container').prepend(d); setTimeout(()=>{ if(d.parentNode) d.remove(); },5000); }
+
+  function isValidEmail(e){
+    const email = String(e).trim();
+    // Check for common formatting issues first
+    if (email.includes('..') || email.startsWith('.') || email.endsWith('.')) {
+      return false;
+    }
+    // Main pattern check - stricter validation matching backend
+    return /^[A-Za-z0-9][\w.%+-]*@([A-Za-z0-9][\w-]*\.)+[A-Za-z]{2,}$/.test(email);
+  }
+  function isValidName(n){ return (n||'').trim().length>=2; }
+
+  function validateCreate(){
+    const valid = isValidName(nameInput.value) && isValidEmail(emailInput.value);
+    createSubmit.disabled = !valid;
+    if (emailInput.value && !isValidEmail(emailInput.value)) {
+      emailInput.classList.add('is-invalid');
+      createEmailFeedback.textContent = 'Please enter a valid email address (e.g., user@example.com)';
+    } else {
+      emailInput.classList.remove('is-invalid');
+    }
+    // If a club is selected and no role chosen, show inline error (while typing)
+    if (clubSelect.value && !roleSelect.value) {
+      roleSelect.classList.add('is-invalid');
+      roleFeedback.textContent = 'Please select a role.';
+    } else {
+      roleSelect.classList.remove('is-invalid');
+    }
+  }
+  function validateEdit(){
+    const valid = isValidName(editName.value) && isValidEmail(editEmail.value);
+    editSubmit.disabled = !valid;
+    if (editEmail.value && !isValidEmail(editEmail.value)) {
+      editEmail.classList.add('is-invalid');
+      editEmailFeedback.textContent = 'Please enter a valid email address (e.g., user@example.com)';
+    } else {
+      editEmail.classList.remove('is-invalid');
+    }
+  }
+  nameInput.addEventListener('input', validateCreate);
+  emailInput.addEventListener('input', function(){ validateCreate(); checkEmailAvailability(this.value, createEmailFeedback, null); });
+  editName.addEventListener('input', validateEdit);
+  editEmail.addEventListener('input', function(){ validateEdit(); checkEmailAvailability(this.value, editEmailFeedback, editId.value||null); });
+  clubSelect.addEventListener('change', validateCreate);
+  roleSelect.addEventListener('change', validateCreate);
+  validateCreate();
+
+  let emailCheckTimeout = null;
+  function setEmailTaken(inputEl, feedbackEl, taken){
+    if(taken){ inputEl.classList.add('is-invalid'); feedbackEl.textContent='already registered'; }
+    else { 
+      if (inputEl.value && !isValidEmail(inputEl.value)) {
+        inputEl.classList.add('is-invalid'); 
+        feedbackEl.textContent = 'Enter a valid email address (e.g., user@example.com).'; 
+      } else {
+        inputEl.classList.remove('is-invalid');
+      }
+    }
+    validateCreate();
+  }
+  function checkEmailAvailability(email, feedbackEl, excludeId=null){
+    if(!isValidEmail(email)){ setEmailTaken(emailInput, feedbackEl, false); return; }
+    clearTimeout(emailCheckTimeout);
+    emailCheckTimeout = setTimeout(()=>{
+      const params = new URLSearchParams({ email: email.trim() }); if(excludeId) params.set('exclude_id', excludeId);
+      fetch(`/api/students/check?${params.toString()}`)
+        .then(r=>r.json()).then(d=>{ if(d && d.success) setEmailTaken(emailInput, feedbackEl, !!d.exists); else setEmailTaken(emailInput, feedbackEl, false); })
+        .catch(()=> setEmailTaken(emailInput, feedbackEl, false));
+    }, 300);
+  }
+
+  function updateStudentsEmptyState(){
+    const cards = Array.from(document.querySelectorAll('.student-card'));
+    const anyVisible = cards.some(c => c.offsetParent !== null && c.style.display !== 'none');
+    document.getElementById('studentsEmptyState').style.display = anyVisible ? 'none':'block';
+  }
+
+  // Create student + (optional) immediate membership assignment
+  document.getElementById('createStudentForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    // Role required only when a club is selected
+    if (clubSelect.value && !roleSelect.value) {
+      roleSelect.classList.add('is-invalid'); roleFeedback.textContent = 'Please select a role.'; return;
+    } else {
+      roleSelect.classList.remove('is-invalid');
+    }
+
+    // Validate that club and role are both provided
+    if ((clubSelect.value && !roleSelect.value) || (!clubSelect.value && roleSelect.value)) {
+      if (!clubSelect.value) {
+        clubSelect.classList.add('is-invalid');
+        showAlert('Please select both club and role', 'error');
+      }
+      if (!roleSelect.value) {
+        roleSelect.classList.add('is-invalid');
+        roleFeedback.textContent = 'Please select a role.';
+      }
+      return;
+    } else {
+      clubSelect.classList.remove('is-invalid');
+      roleSelect.classList.remove('is-invalid');
+    }
+
+    const payload = { name: nameInput.value.trim(), email: emailInput.value.trim() };
+    showLoading();
+    fetch('/api/students', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })
+      .then(r => r.json())
+      .then(async res => {
+        if(!res.success){
+          hideLoading(); showAlert(res.error || 'Failed to add student','error'); return;
+        }
+        // If a club was chosen, chain a membership creation
+        const sid = res.student_id;
+        if (clubSelect.value && roleSelect.value) {
+          const clubId = clubSelect.value;
+          const roleVal = roleSelect.value;
+          try{
+            const resp = await fetch(`/api/clubs/${clubId}/members`, {
+              method: 'POST',
+              headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({ student_id: sid, role: roleVal })
+            });
+            const j = await resp.json();
+            if(!j.success){ hideLoading(); showAlert(j.error || 'Failed to add membership','error'); return; }
+          } catch(err){
+            hideLoading(); console.error(err); showAlert('Error creating membership','error'); return;
+          }
+        }
+        hideLoading();
+        const modal=bootstrap.Modal.getInstance(document.getElementById('createStudentModal'));
+        if(modal) modal.hide();
+        showAlert('Student added successfully!','success');
+        setTimeout(()=>window.location.reload(),800);
+      })
+      .catch(err => { hideLoading(); console.error(err); showAlert('An error occurred','error'); });
+  });
+
+  // Prefill edit modal
+  document.addEventListener('click', function(e){
+    const btn = e.target.closest('.edit-student-btn');
+    if(!btn) return;
+    e.preventDefault();
+    const id = btn.dataset.studentId;
+    const card = document.querySelector(`.student-card[data-student-id="${id}"]`);
+    const name = card ? card.querySelector('.student-name').innerText.trim() : '';
+    const em = card ? (card.querySelector('.student-email a')?.innerText || '') : '';
+    editId.value = id; editName.value = name; editEmail.value = em;
+    validateEdit();
+    const modal = new bootstrap.Modal(document.getElementById('editStudentModal')); modal.show();
+  });
+
+  // Submit edit
+  document.getElementById('editStudentForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    const id = editId.value;
+    const payload = { name: editName.value.trim(), email: editEmail.value.trim() };
+    showLoading();
+    fetch(`/api/students/${id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })
+      .then(r=>r.json()).then(res=>{ hideLoading(); if(res.success){ const modal=bootstrap.Modal.getInstance(document.getElementById('editStudentModal')); if(modal) modal.hide(); showAlert('Student updated!','success'); setTimeout(()=>window.location.reload(),800); } else showAlert(res.error||'Failed to update student','error'); })
+      .catch(err=>{ hideLoading(); console.error(err); showAlert('An error occurred','error'); });
+  });
+
+  // Delete handlers
+  document.addEventListener('click', function(e){
+    const btn = e.target.closest('.delete-student-btn'); if(!btn) return;
+    e.preventDefault();
+    const id = btn.dataset.studentId;
+    const name = btn.dataset.studentName || '';
+    document.getElementById('deleteStudentName').textContent = name;
+    confirmDeleteBtn.setAttribute('data-id', id);
+    deleteModal.show();
+  });
+  confirmDeleteBtn.addEventListener('click', function(){
+    const id = this.getAttribute('data-id');
+    if(!id) return;
+    showLoading();
+    fetch(`/api/students/${id}`, { method:'DELETE' })
+      .then(r=>r.json()).then(res=>{ hideLoading(); if(res.success){ deleteModal.hide(); showAlert('Student deleted','success'); setTimeout(()=>window.location.reload(),800); } else showAlert(res.error||'Failed to delete student','error'); })
+      .catch(err=>{ hideLoading(); console.error(err); showAlert('Error deleting student','error'); });
+  });
+
+  // Copy email
+  document.addEventListener('click', function(e){
+    const btn = e.target.closest('.copy-email-btn'); if(!btn) return;
+    const email = btn.dataset.email || ''; if(!email){ showAlert('No email to copy','info'); return; }
+    if(navigator.clipboard){ navigator.clipboard.writeText(email).then(()=> showAlert('Copied email to clipboard','success')).catch(()=> showAlert('Copy failed','error')); } else { showAlert('Clipboard not supported','error'); }
+  });
+
+  // Membership filters
+  function renderStudents(students){ /* replaced by backend filter when Apply pressed */ 
+    if(!students || students.length === 0){
+      studentsContainer.innerHTML = ''; updateStudentsEmptyState(); return;
+    }
+    let html = '';
+    students.forEach(s=>{
+      const id = s.id || '';
+      const name = (s.name || '—');
+      const email = (s.email || '');
+      const mems = Array.isArray(s.memberships) ? s.memberships : [];
+      let badges = '';
+      
+      // Create badges for memberships
+      if (mems.length > 0) {
+        mems.forEach(m=>{ 
+          const club=(m.club_name||''); 
+          const role=(m.role||''); 
+          const roleClass = role.toLowerCase().replace(/\s+/g,'-');
+          badges += `<span class="badge rounded-pill bg-light text-secondary border me-1">
+            ${club} — <span class="role-indicator role-${roleClass}">${role}</span>
+          </span>`; 
         });
+      } else {
+        badges = '<em class="text-muted">No club memberships</em>';
+      }
+      
+      html += `
+      <div class="student-card" data-student-id="${id}" data-student-name="${name.toLowerCase()}" data-student-email="${email.toLowerCase()}">
+        <div class="student-avatar"><i class="bi bi-person-circle"></i></div>
+        <div class="student-info">
+          <h4 class="student-name">${name}</h4>
+          <p class="student-email"><a href="mailto:${email}">${email}</a>
+            <button class="btn btn-sm btn-outline-secondary copy-email-btn ms-2" data-email="${email}"><i class="bi bi-clipboard"></i></button>
+          </p>
+          <div class="student-memberships small mt-1">${badges}</div>
+        </div>
+        <div class="student-actions dropdown">
+          <button class="btn btn-link p-0 text-muted" type="button" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item edit-student-btn" href="#" data-student-id="${id}"><i class="bi bi-pencil"></i> Edit</a></li>
+            <li><a class="dropdown-item text-danger delete-student-btn" href="#" data-student-id="${id}" data-student-name="${name}"><i class="bi bi-trash"></i> Delete</a></li>
+          </ul>
+        </div>
+      </div>`;
     });
+    studentsContainer.innerHTML = html;
+    updateStudentsEmptyState();
+  }
 
-    // Create student form submission
-    createStudentForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const formData = new FormData(this);
-        const data = {
-            name: formData.get('name'),
-            email: formData.get('email')
-        };
+  function applyFilterRequest(){
+    const role = roleFilter.value || '';
+    const clubIds = Array.from(document.querySelectorAll('.club-filter:checked')).map(cb => cb.value);
+    const params = new URLSearchParams();
+    if(role) params.set('role', role);
+    if(clubIds.length) params.set('club_id', clubIds.join(','));
+    
+    // Show loading and add debug
+    showLoading();
+    console.log(`Filtering: role=${role}, clubs=${clubIds.join(',')}`);
+    
+    fetch(`/api/students/memberships?${params.toString()}`)
+      .then(r=>r.json())
+      .then(d=>{ 
+        hideLoading(); 
+        if(d && d.success){ 
+          console.log(`Got ${d.students.length} students in filter response`);
+          renderStudents(d.students); 
+        } else { 
+          showAlert(d.error || 'Failed to load students','error'); 
+        } 
+      })
+      .catch(err=>{ hideLoading(); console.error(err); showAlert('Error loading students','error'); });
+  }
+  document.getElementById('applyFiltersBtn').addEventListener('click', function(e){ 
+    e.preventDefault(); 
+    console.log("Apply filters clicked");
+    applyFilterRequest(); 
+  });
+  
+  document.getElementById('clearFiltersBtn').addEventListener('click', function(e){ 
+    e.preventDefault(); 
+    console.log("Clear filters clicked");
+    document.querySelectorAll('.club-filter').forEach(cb=>cb.checked=false); 
+    roleFilter.value=''; 
+    
+    // Instead of reload, fetch all students with no filters
+    showLoading();
+    fetch('/api/students/memberships')
+      .then(r=>r.json())
+      .then(d=>{ 
+        hideLoading(); 
+        if(d && d.success){ 
+          console.log(`Got ${d.students.length} students after clearing filters`);
+          renderStudents(d.students); 
+        } else { 
+          showAlert(d.error || 'Failed to load students','error'); 
+        } 
+      })
+      .catch(err=>{ 
+        hideLoading(); 
+        console.error(err); 
+        showAlert('Error loading students','error'); 
+        // Fall back to reload if fetch fails
+        window.location.reload(); 
+      });
+  });
 
-        showLoading();
-        
-        fetch('/api/students', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data)
-        })
-        .then(response => response.json())
-        .then(result => {
-            hideLoading();
-            if (result.success) {
-                createStudentModal.hide();
-                showAlert('Student added successfully!', 'success');
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1000);
-            } else {
-                showAlert(result.error || 'Failed to add student', 'error');
-            }
-        })
-        .catch(error => {
-            hideLoading();
-            console.error('Error:', error);
-            showAlert('An error occurred while adding the student', 'error');
-        });
+  // Simple client-side search
+  if (searchInput){
+    searchInput.addEventListener('input', function(){
+      const q = this.value.toLowerCase().trim();
+      document.querySelectorAll('.student-card').forEach(card=>{
+        const name = card.dataset.studentName||'';
+        const email = card.dataset.studentEmail||'';
+        card.style.display = (name.includes(q) || email.includes(q)) ? 'flex' : 'none';
+      });
+      updateStudentsEmptyState();
     });
-
-    // Reset form when modal is hidden
-    document.getElementById('createStudentModal').addEventListener('hidden.bs.modal', function() {
-        createStudentForm.reset();
-    });
-
-    // Utility functions
-    function showLoading() {
-        loadingOverlay.style.display = 'flex';
-    }
-
-    function hideLoading() {
-        loadingOverlay.style.display = 'none';
-    }
-
-    function showAlert(message, type) {
-        const alertDiv = document.createElement('div');
-        alertDiv.className = `alert alert-${type === 'error' ? 'danger' : 'success'} alert-dismissible fade show`;
-        alertDiv.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-        
-        const container = document.querySelector('.students-container');
-        container.insertBefore(alertDiv, container.firstChild);
-        
-        // Auto-dismiss after 5 seconds
-        setTimeout(() => {
-            if (alertDiv.parentNode) {
-                alertDiv.remove();
-            }
-        }, 5000);
-    }
+  }
 });
 </script>
 {% endblock %}
