@@ -265,15 +265,21 @@ document.addEventListener('DOMContentLoaded', function(){
   function isValidName(n){ return (n||'').trim().length>=2; }
 
   function validateCreate(){
-    const valid = isValidName(nameInput.value) && isValidEmail(emailInput.value);
+    // Check if email is both valid format and available
+    const emailValid = isValidEmail(emailInput.value);
+    const emailAvailable = emailInput.dataset.emailAvailable !== 'false';
+    const valid = isValidName(nameInput.value) && emailValid && emailAvailable;
+    
+    // Disable submit button if not valid
     createSubmit.disabled = !valid;
-    if (emailInput.value && !isValidEmail(emailInput.value)) {
+    
+    // Handle email validation feedback
+    if (emailInput.value && !emailValid) {
       emailInput.classList.add('is-invalid');
       createEmailFeedback.textContent = 'Please enter a valid email address (e.g., user@example.com)';
-    } else {
-      emailInput.classList.remove('is-invalid');
     }
-    // If a club is selected and no role chosen, show inline error (while typing)
+    
+    // If a club is selected and no role chosen, show inline error
     if (clubSelect.value && !roleSelect.value) {
       roleSelect.classList.add('is-invalid');
       roleFeedback.textContent = 'Please select a role.';
@@ -281,45 +287,94 @@ document.addEventListener('DOMContentLoaded', function(){
       roleSelect.classList.remove('is-invalid');
     }
   }
+  
   function validateEdit(){
-    const valid = isValidName(editName.value) && isValidEmail(editEmail.value);
+    // Check if email is both valid format and available
+    const emailValid = isValidEmail(editEmail.value);
+    const emailAvailable = editEmail.dataset.emailAvailable !== 'false';
+    const valid = isValidName(editName.value) && emailValid && emailAvailable;
+    
+    // Disable submit button if not valid
     editSubmit.disabled = !valid;
-    if (editEmail.value && !isValidEmail(editEmail.value)) {
+    
+    // Handle email validation feedback
+    if (editEmail.value && !emailValid) {
       editEmail.classList.add('is-invalid');
       editEmailFeedback.textContent = 'Please enter a valid email address (e.g., user@example.com)';
-    } else {
-      editEmail.classList.remove('is-invalid');
     }
   }
+  // Event listeners for form validation
   nameInput.addEventListener('input', validateCreate);
-  emailInput.addEventListener('input', function(){ validateCreate(); checkEmailAvailability(this.value, createEmailFeedback, null); });
+  emailInput.addEventListener('input', function(){ 
+    validateCreate(); 
+    checkEmailAvailability(this.value, emailInput, createEmailFeedback, null); 
+  });
   editName.addEventListener('input', validateEdit);
-  editEmail.addEventListener('input', function(){ validateEdit(); checkEmailAvailability(this.value, editEmailFeedback, editId.value||null); });
+  editEmail.addEventListener('input', function(){ 
+    validateEdit(); 
+    checkEmailAvailability(this.value, editEmail, editEmailFeedback, editId.value||null); 
+  });
   clubSelect.addEventListener('change', validateCreate);
   roleSelect.addEventListener('change', validateCreate);
   validateCreate();
 
   let emailCheckTimeout = null;
-  function setEmailTaken(inputEl, feedbackEl, taken){
-    if(taken){ inputEl.classList.add('is-invalid'); feedbackEl.textContent='already registered'; }
-    else { 
-      if (inputEl.value && !isValidEmail(inputEl.value)) {
-        inputEl.classList.add('is-invalid'); 
-        feedbackEl.textContent = 'Enter a valid email address (e.g., user@example.com).'; 
-      } else {
+  function setEmailValidationStatus(inputEl, feedbackEl, taken, validCheck){
+    // Email is taken by another user
+    if(taken){ 
+      inputEl.classList.add('is-invalid');
+      feedbackEl.textContent = 'Email already registered with another account';
+      inputEl.dataset.emailAvailable = 'false';
+    }
+    // Email format is invalid
+    else if (inputEl.value && !isValidEmail(inputEl.value)) {
+      inputEl.classList.add('is-invalid'); 
+      feedbackEl.textContent = 'Enter a valid email address (e.g., user@example.com).';
+      inputEl.dataset.emailAvailable = 'false'; 
+    } 
+    // Email is valid and available (or it's the user's own email in edit mode)
+    else {
+      if (validCheck) {
         inputEl.classList.remove('is-invalid');
+        inputEl.dataset.emailAvailable = 'true';
       }
     }
-    validateCreate();
+    
+    // Call the appropriate validation function based on which input is being checked
+    if(inputEl === emailInput) {
+      validateCreate();
+    } else if(inputEl === editEmail) {
+      validateEdit();
+    }
   }
-  function checkEmailAvailability(email, feedbackEl, excludeId=null){
-    if(!isValidEmail(email)){ setEmailTaken(emailInput, feedbackEl, false); return; }
+  function checkEmailAvailability(email, inputEl, feedbackEl, excludeId=null){
+    // Skip validation if email is empty or invalid
+    if(!email || !isValidEmail(email)){ 
+      setEmailValidationStatus(inputEl, feedbackEl, false, false); 
+      return; 
+    }
+    
+    // Debounce the API call
     clearTimeout(emailCheckTimeout);
-    emailCheckTimeout = setTimeout(()=>{
-      const params = new URLSearchParams({ email: email.trim() }); if(excludeId) params.set('exclude_id', excludeId);
+    emailCheckTimeout = setTimeout(() => {
+      // Show loading indicator
+      feedbackEl.textContent = 'Checking email...';
+      
+      const params = new URLSearchParams({ email: email.trim() }); 
+      if(excludeId) params.set('exclude_id', excludeId);
+      
       fetch(`/api/students/check?${params.toString()}`)
-        .then(r=>r.json()).then(d=>{ if(d && d.success) setEmailTaken(emailInput, feedbackEl, !!d.exists); else setEmailTaken(emailInput, feedbackEl, false); })
-        .catch(()=> setEmailTaken(emailInput, feedbackEl, false));
+        .then(r => r.json())
+        .then(data => { 
+          if(data && data.success) {
+            setEmailValidationStatus(inputEl, feedbackEl, data.exists, true);
+          } else {
+            setEmailValidationStatus(inputEl, feedbackEl, false, true);
+          }
+        })
+        .catch(() => {
+          setEmailValidationStatus(inputEl, feedbackEl, false, true);
+        });
     }, 300);
   }
 
@@ -332,6 +387,20 @@ document.addEventListener('DOMContentLoaded', function(){
   // Create student + (optional) immediate membership assignment
   document.getElementById('createStudentForm').addEventListener('submit', function(e){
     e.preventDefault();
+    
+    // Check email validity and availability
+    if (!isValidEmail(emailInput.value)) {
+      emailInput.classList.add('is-invalid');
+      createEmailFeedback.textContent = 'Please enter a valid email address (e.g., user@example.com)';
+      return;
+    }
+    
+    if (emailInput.dataset.emailAvailable === 'false') {
+      emailInput.classList.add('is-invalid');
+      createEmailFeedback.textContent = 'Email already registered with another account';
+      return;
+    }
+    
     // Role required only when a club is selected
     if (clubSelect.value && !roleSelect.value) {
       roleSelect.classList.add('is-invalid'); roleFeedback.textContent = 'Please select a role.'; return;
@@ -406,11 +475,42 @@ document.addEventListener('DOMContentLoaded', function(){
   // Submit edit
   document.getElementById('editStudentForm').addEventListener('submit', function(e){
     e.preventDefault();
+    
+    // Check email validity and availability
+    if (!isValidEmail(editEmail.value)) {
+      editEmail.classList.add('is-invalid');
+      editEmailFeedback.textContent = 'Please enter a valid email address (e.g., user@example.com)';
+      return;
+    }
+    
+    if (editEmail.dataset.emailAvailable === 'false') {
+      editEmail.classList.add('is-invalid');
+      editEmailFeedback.textContent = 'Email already registered with another account';
+      return;
+    }
+    
     const id = editId.value;
     const payload = { name: editName.value.trim(), email: editEmail.value.trim() };
     showLoading();
     fetch(`/api/students/${id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })
-      .then(r=>r.json()).then(res=>{ hideLoading(); if(res.success){ const modal=bootstrap.Modal.getInstance(document.getElementById('editStudentModal')); if(modal) modal.hide(); showAlert('Student updated!','success'); setTimeout(()=>window.location.reload(),800); } else showAlert(res.error||'Failed to update student','error'); })
+      .then(r=>r.json())
+      .then(res=>{ 
+        hideLoading(); 
+        if(res.success){ 
+          const modal=bootstrap.Modal.getInstance(document.getElementById('editStudentModal')); 
+          if(modal) modal.hide(); 
+          showAlert('Student updated!','success'); 
+          setTimeout(()=>window.location.reload(),800); 
+        } else {
+          // Handle specific error for duplicate email
+          if (res.error && res.error.includes('already used')) {
+            editEmail.classList.add('is-invalid');
+            editEmailFeedback.textContent = res.error;
+          } else {
+            showAlert(res.error||'Failed to update student','error');
+          }
+        } 
+      })
       .catch(err=>{ hideLoading(); console.error(err); showAlert('An error occurred','error'); });
   });
 

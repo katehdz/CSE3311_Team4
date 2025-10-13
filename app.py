@@ -268,11 +268,17 @@ def api_create_student():
             return jsonify({"success": False, "error": "Name and email required"}), 400
         if not validate_name(name):
             return jsonify({"success": False, "error": "Invalid name"}), 400
+            
+        # Normalize email and check validity
         email = normalize_email(email_raw)
         if not valid_email(email):
             return jsonify({"success": False, "error": "Invalid email format. Please provide a properly formatted email address."}), 400
-        if db.get_student_by_email(email):
-            return jsonify({"success": False, "error": "already registered"}), 400
+            
+        # Check for duplicate email (case insensitive)
+        existing_student = db.get_student_by_email(email)
+        if existing_student:
+            return jsonify({"success": False, "error": "Email already registered with another account"}), 400
+            
         sid = db.create_student({"name": name, "email": email})
         return jsonify({"success": True, "message": "Student created", "student_id": sid}), 201
     except Exception as e:
@@ -289,12 +295,17 @@ def api_update_student(student_id):
             return jsonify({"success": False, "error": "Both name and email required"}), 400
         if not validate_name(name):
             return jsonify({"success": False, "error": "Invalid name"}), 400
+            
+        # Normalize email and check validity
         email = normalize_email(email_raw)
         if not valid_email(email):
             return jsonify({"success": False, "error": "Invalid email format. Please provide a properly formatted email address."}), 400
-        all_students = [s for s in db.get_all_students() if s.get("id") != student_id]
-        if any(((s.get("email") or "").lower() == email.lower()) for s in all_students):
-            return jsonify({"success": False, "error": "Email already used"}), 400
+        
+        # Check if email is already used by another student
+        existing_student = db.get_student_by_email(email)
+        if existing_student and existing_student.get("id") != student_id:
+            return jsonify({"success": False, "error": "Email already used by another student"}), 400
+            
         db.update_student(student_id, {"name": name, "email": email})
         return jsonify({"success": True, "message": "Student updated"})
     except Exception as e:

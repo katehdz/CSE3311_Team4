@@ -164,13 +164,29 @@ class FirebaseDB:
         return None
 
     def get_student_by_email(self, email: str):
+        """
+        Find a student by email (case insensitive)
+        """
         if not email:
             return None
-        docs = self.db.collection("students").where("email", "==", email).limit(1).stream()
+            
+        # Normalize the email for consistent lookup
+        email_normalized = email.strip().lower()
+        
+        # Check for exact match first (most efficient)
+        docs = self.db.collection("students").where("email", "==", email_normalized).limit(1).stream()
         for d in docs:
             val = d.to_dict()
             val["id"] = d.id
             return val
+        
+        # If no exact match, perform a case-insensitive check for extra safety
+        all_students = self.get_all_students()
+        for student in all_students:
+            student_email = (student.get("email") or "").lower()
+            if student_email == email_normalized:
+                return student
+                
         return None
 
     def update_student(self, student_id, data):
